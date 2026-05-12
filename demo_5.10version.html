@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>萌迹PetPet - 激励成长每一天</title>
+    <style>
+        :root {
+            --primary-color: #ff9fb2;
+            --secondary-color: #88d8b0;
+            --bg-color: #fff5f7;
+            --text-color: #4a4a4a;
+            --border-color: #333;
+            --card-bg: #ffffff;
+            --positive-color: #a8e6cf;
+            --negative-color: #ff8b94;
+            --pixel-size: 4px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: "PingFang SC", "Microsoft YaHei", monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 像素风通用边框 */
+        .pixel-border {
+            border: var(--pixel-size) solid var(--border-color);
+            box-shadow: 
+                inset calc(var(--pixel-size) * -1) calc(var(--pixel-size) * -1) 0 0 #ddd,
+                var(--pixel-size) var(--pixel-size) 0 0 rgba(0,0,0,0.1);
+            position: relative;
+            background: var(--card-bg);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px; /* 移动端稍小边距 */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+        }
+
+        /* 确保长单词不溢出 */
+        * {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* 欢迎界面 */
+        #onboarding {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .welcome-box {
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .pet-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .pet-option {
+            padding: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .pet-option.selected {
+            border-color: var(--primary-color);
+            background: var(--bg-color);
+            transform: scale(1.05);
+        }
+
+        .pet-option-emoji {
+            font-size: 40px;
+            display: block;
+        }
+
+        /* 顶部导航 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .user-info {
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+
+        /* 模式切换按钮 */
+        .btn-mode {
+            font-size: 12px;
+            padding: 5px 10px;
+            background: #eee;
+        }
+
+        /* 宠物展示区 */
+        .pet-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .score-display {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ff6b81;
+        }
+
+        .pet-display {
+            font-size: 80px;
+            margin: 15px 0;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .pet-display:active { transform: scale(1.1); }
+
+        .progress-container {
+            width: 80%;
+            height: 24px;
+            background: #eee;
+            border: 3px solid var(--border-color);
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 任务面板 */
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            cursor: pointer;
+            background: #eee;
+            border: 2px solid var(--border-color);
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .item-card.disabled {
+            opacity: 0.6;
+            background: #f9f9f9;
+        }
+
+        .item-info { display: flex; flex-direction: column; gap: 4px; }
+        .item-name { font-weight: bold; font-size: 16px; }
+        .item-meta { font-size: 12px; color: #888; }
+
+        .btn {
+            padding: 10px 15px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active { transform: translateY(2px); }
+        .btn-small { padding: 5px 10px; font-size: 12px; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-success { background: var(--positive-color); }
+        .btn-danger { background: var(--negative-color); }
+        .btn-warning { background: #ffcc5c; }
+
+        /* 商店区域 */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 380px) {
+            .shop-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .voucher-card {
+            padding: 15px;
+            text-align: center;
+            background: #fff9c4;
+            border: 2px dashed var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .voucher-hint { font-size: 11px; color: #f39c12; min-height: 32px; }
+
+        /* 家长模式专属样式 */
+        #parent-view { display: none; }
+        .parent-active #child-view { display: none; }
+        .parent-active #parent-view { display: block; }
+
+        .admin-section {
+            margin-bottom: 25px;
+            padding: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            font-size: 16px;
+        }
+
+        .hidden { display: none !important; }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 350px;
+            padding: 25px;
+            background: var(--card-bg);
+            text-align: center;
+        }
+
+        /* 动画 */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .pet-bounce { animation: bounce 0.5s ease; }
+
+        .floating-text {
+            position: absolute;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s forwards;
+            z-index: 100;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-60px); opacity: 0; }
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--card-bg);
+            border-top: var(--pixel-size) solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 500;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-item {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #888;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: #fff0f3;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-label {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* 调整内容区边距 */
+        .container {
+            padding-bottom: 90px;
+        }
+
+        .parent-active .bottom-nav {
+            display: none !important;
+        }
+
+        /* 气泡样式 */
+        .status-bubble {
+            position: absolute;
+            top: -20px; /* 移到宠物上方 */
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 2px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            white-space: nowrap;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .status-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0 8px;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+
+        .status-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 9px 9px 0 9px;
+            border-style: solid;
+            border-color: var(--border-color) transparent transparent transparent;
+            z-index: -1;
+        }
+
+        /* 极简任务预览 */
+        .task-preview-card {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff;
+            text-align: left;
+        }
+
+        .preview-item {
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 图鉴展示台样式 */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .gallery-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            transition: all 0.3s;
+        }
+
+        .gallery-item.locked {
+            opacity: 0.5;
+        }
+
+        .gallery-item.locked .gallery-emoji {
+            filter: grayscale(1) brightness(0);
+            opacity: 0.3;
+        }
+
+        .gallery-emoji {
+            font-size: 40px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .gallery-name {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .next-evo-hint {
+            font-size: 12px;
+            color: #ff6b81;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        /* 数据看板样式 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card {
+            padding: 12px;
+            background: #fff;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80px;
+        }
+
+        .dashboard-card.full-width {
+            grid-column: span 2;
+        }
+
+        .dashboard-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .dashboard-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .dashboard-value em {
+            font-style: normal;
+            font-size: 20px;
+            color: var(--primary-color);
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 首次启动欢迎界面 -->
+    <div id="onboarding" class="hidden">
+        <div class="welcome-box pixel-border">
+            <h2 style="color: var(--primary-color)">🐾 欢迎来到萌迹PetPet！</h2>
+            
+            <!-- 第一步：输入姓名 -->
+            <div id="onboarding-step-1">
+                <p>很高兴可以和你交朋友，请问你叫什么名字？</p>
+                <div class="form-group">
+                    <input type="text" id="user-name-input" placeholder="输入你的名字">
+                    <button class="btn btn-primary" onclick="goToStep2()">下一步</button>
+                </div>
+            </div>
+
+            <!-- 第二步：选择宠物 -->
+            <div id="onboarding-step-2" class="hidden">
+                <p id="welcome-back-name">你好呀！请选择你的初始宠物：</p>
+                <div class="pet-selector">
+                    <div class="pet-option pixel-border selected" onclick="selectPetOption('cat', this)">
+                        <span class="pet-option-emoji">🐱</span>
+                        <span style="font-size: 12px;">小猫</span>
+                    </div>
+                    <div class="pet-option pixel-border" onclick="selectPetOption('dog', this)">
+                        <span class="pet-option-emoji">🐶</span>
+                        <span style="font-size: 12px;">小狗</span>
+                    </div>
+                    <div class="pet-option pixel-border" onclick="selectPetOption('rabbit', this)">
+                        <span class="pet-option-emoji">🐇</span>
+                        <span style="font-size: 12px;">小兔</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-small" onclick="goToStep1()">上一步</button>
+                    <button class="btn btn-primary" style="flex: 1" onclick="finishOnboarding()">开启奇妙之旅</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 家长验证弹窗 -->
+    <div id="parent-auth-modal" class="modal-overlay hidden">
+        <div class="modal-content pixel-border">
+            <h3 id="auth-modal-title" style="color: var(--primary-color); margin-top: 0;">🔒 家长验证</h3>
+            <p id="auth-modal-desc" style="font-size: 14px; color: #666; margin-bottom: 20px;">请输入 4 位数字密码</p>
+            
+            <div class="form-group">
+                <input type="password" id="parent-auth-input" maxlength="4" placeholder="****" 
+                       style="text-align: center; font-size: 24px; letter-spacing: 10px; width: 100%;">
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                    <button id="auth-confirm-btn" class="btn btn-primary" onclick="confirmParentAuth()">确认</button>
+                    <button class="btn btn-small" onclick="closeAuthModal()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 每日打卡弹窗 -->
+    <div id="punch-in-modal" class="modal-overlay hidden">
+        <div class="modal-content pixel-border">
+            <h3 style="color: #ffcc5c; margin-top: 0;">📅 每日打卡</h3>
+            <div style="font-size: 40px; margin: 15px 0;">�</div>
+            <p id="punch-in-msg">今日打卡成功！</p>
+            <div id="punch-in-reward" style="font-size: 24px; font-weight: bold; color: var(--primary-color); margin: 10px 0;">+1 能量</div>
+            <p id="punch-in-streak-msg" style="font-size: 14px; color: #ff6b81; font-weight: bold;">🔥已坚持 0 天</p>
+            <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="closePunchInModal()">太棒了</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 顶部信息栏 -->
+        <div class="header">
+            <div class="user-info">👋 你好, <span id="display-name">小朋友</span>!</div>
+            <button id="toggle-parent" class="btn btn-mode pixel-border" onclick="toggleParentMode()">进入家长模式 🛠️</button>
+        </div>
+
+        <!-- 孩子端内容 -->
+        <div id="child-view">
+            <!-- 模块 1: 宠物展示 (默认显示) -->
+            <div id="child-pet-view">
+                <div class="pet-section pixel-border">
+                    <div class="score-display">✨ 能量积分: <span id="total-score">0</span></div>
+                    <div style="position: relative;">
+                        <div id="pet-status-bubble" class="status-bubble hidden">喵~</div>
+                        <div class="pet-display" id="pet-avatar" onclick="petInteraction()">🐱</div>
+                    </div>
+                    <div id="pet-stage-text" style="font-weight: bold; margin-bottom: 5px;">加载中...</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="exp-bar"></div>
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 8px;">
+                        成长值: <span id="current-exp">0</span> / 160
+                    </div>
+
+                    <!-- 每日打卡区域 -->
+                    <div style="margin-top: 15px;">
+                        <button id="punch-in-btn" class="btn btn-small btn-success" onclick="dailyPunchIn()">📅 每日打卡</button>
+                        <div id="punch-in-streak" style="font-size: 12px; margin-top: 5px; color: #ff6b81; font-weight: bold;"></div>
+                    </div>
+
+                    <!-- 首页任务预览 -->
+                    <div class="task-preview-card pixel-border">
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">📋 待办任务预览</div>
+                        <div id="home-task-preview">
+                            <!-- 动态生成最多3条 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模块 2: 任务看板 (初始隐藏) -->
+            <div id="child-tasks-view" class="hidden">
+                <div class="pixel-border admin-section">
+                    <div class="panel-title">📋 我的任务看板</div>
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchChildTab('pending')">待做任务</div>
+                        <div class="tab" onclick="switchChildTab('history')">已做记录</div>
+                    </div>
+                    <div id="child-tasks-pending" class="list-container">
+                        <!-- 动态生成 -->
+                    </div>
+                    <div id="child-tasks-history" class="list-container hidden">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 模块 3: 愿望商店 (初始隐藏) -->
+            <div id="child-shop-view" class="hidden">
+                <div class="pixel-border admin-section">
+                    <div class="panel-title">🎁 愿望兑换商店</div>
+                    <div id="child-shop" class="shop-grid">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模块 4: 展示台 (初始隐藏) -->
+            <div id="child-gallery-view" class="hidden">
+                <div class="pixel-border admin-section">
+                    <div class="panel-title">🏆 进化展示台</div>
+                    <div id="gallery-container-tab" class="gallery-grid">
+                        <!-- 动态生成 -->
+                    </div>
+                    <div id="next-evo-detail-tab" class="next-evo-hint" style="text-align: center;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 家长端内容 -->
+        <div id="parent-view">
+            <!-- 数据看板 -->
+            <div class="dashboard-grid" id="parent-dashboard">
+                <div class="dashboard-card pixel-border">
+                    <div class="dashboard-label">🧹 累计做家务</div>
+                    <div class="dashboard-value" id="stat-housework">0 小时</div>
+                </div>
+                <div class="dashboard-card pixel-border">
+                    <div class="dashboard-label">📖 累计学习</div>
+                    <div class="dashboard-value" id="stat-study">0 小时</div>
+                </div>
+                <div class="dashboard-card pixel-border">
+                    <div class="dashboard-label">🔥 连续打卡</div>
+                    <div class="dashboard-value" id="stat-streak">0 天</div>
+                </div>
+                <div class="dashboard-card pixel-border">
+                    <div class="dashboard-label">✅ 本周完成</div>
+                    <div class="dashboard-value" id="stat-week-tasks">0 个</div>
+                </div>
+                <div class="dashboard-card pixel-border full-width">
+                    <div class="dashboard-label">📈 过去7天积分变化</div>
+                    <div class="dashboard-value" id="stat-week-score">+0 分</div>
+                </div>
+            </div>
+
+            <!-- 宠物状态区 (家长模式也显示简要状态) -->
+            <div class="pet-section pixel-border" style="padding: 10px; margin-bottom: 10px;">
+                <div style="font-size: 14px;">当前能量: <span id="parent-total-score">0</span></div>
+            </div>
+            
+            <!-- 加减分快捷面板 -->
+            <div class="pixel-border admin-section">
+                <div class="panel-title">🛠️ 家长管理面板</div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchParentTab('rules')">快速打分</div>
+                    <div class="tab" onclick="switchParentTab('audit')">任务审核</div>
+                    <div class="tab" onclick="switchParentTab('vouchers')">愿望设置</div>
+                    <div class="tab" onclick="switchParentTab('settings')">设置密码</div>
+                </div>
+
+                <!-- 规则打分 -->
+                <div id="parent-rules" class="list-container">
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <button class="btn btn-small" onclick="filterRules('self-care')">自理</button>
+                        <button class="btn btn-small" onclick="filterRules('housework')">家务</button>
+                        <button class="btn btn-small" onclick="filterRules('study')">学习</button>
+                    </div>
+                    <div id="rules-list" class="list-container">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 审核 -->
+                <div id="parent-audit" class="list-container hidden">
+                    <!-- 待审核列表 -->
+                </div>
+
+                <!-- 愿望设置 -->
+                <div id="parent-vouchers" class="list-container hidden">
+                    <div class="form-group pixel-border" style="padding: 10px; margin-bottom: 15px;">
+                        <input type="text" id="v-name-input" placeholder="奖品名称 (如: 看动画片)">
+                        <input type="number" id="v-cost-input" placeholder="所需积分 (如: 20)">
+                        <button class="btn btn-success" onclick="addNewVoucher()">添加新愿望</button>
+                    </div>
+                    <div id="parent-voucher-list" class="list-container">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 系统设置：修改密码 -->
+                <div id="parent-settings" class="list-container hidden">
+                    <div class="form-group pixel-border" style="padding: 15px;">
+                        <p style="font-size: 14px; margin-bottom: 10px;">🔑 修改 4 位数字家长密码：</p>
+                        <input type="password" id="new-password-input" maxlength="4" placeholder="输入 4 位数字">
+                        <button class="btn btn-primary" onclick="updateParentPassword()">保存新密码</button>
+                    </div>
+                </div>
+
+                <!-- 危险区域：重置系统 -->
+                <div style="margin-top: 30px; border-top: 2px dashed #ff8b94; padding-top: 15px; text-align: center;">
+                    <button class="btn btn-small btn-danger" onclick="resetSystem()">⚠️ 重置系统 (清空所有数据)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 孩子端底部导航栏 -->
+        <div class="bottom-nav" id="child-bottom-nav">
+            <div class="nav-item active" onclick="switchChildModule('pet', this)">
+                <span class="nav-icon">🐾</span>
+                <span class="nav-label">宠物</span>
+            </div>
+            <div class="nav-item" onclick="switchChildModule('tasks', this)">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">任务</span>
+            </div>
+            <div class="nav-item" onclick="switchChildModule('shop', this)">
+                <span class="nav-icon">🎁</span>
+                <span class="nav-label">商店</span>
+            </div>
+            <div class="nav-item" onclick="switchChildModule('gallery', this)">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">展示台</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始配置数据
+        const DEFAULT_RULES = [
+            { id: 1, type: 'self-care', name: '自己刷牙', pts: 2 },
+            { id: 2, type: 'self-care', name: '准时睡觉', pts: 5 },
+            { id: 3, type: 'self-care', name: '赖床磨蹭', pts: -2 },
+            { id: 4, type: 'self-care', name: '不肯洗澡', pts: -3 },
+            { id: 5, type: 'self-care', name: '自己穿衣服', pts: 2 },
+            
+            { id: 6, type: 'housework', name: '收拾玩具', pts: 3 },
+            { id: 7, type: 'housework', name: '帮倒垃圾', pts: 2 },
+            { id: 8, type: 'housework', name: '弄乱房间', pts: -3 },
+            { id: 9, type: 'housework', name: '浪费粮食', pts: -2 },
+            { id: 10, type: 'housework', name: '帮忙擦桌子', pts: 2 },
+
+            { id: 11, type: 'study', name: '阅读20分钟', pts: 5 },
+            { id: 12, type: 'study', name: '按时写完作业', pts: 10 },
+            { id: 13, type: 'study', name: '练习钢琴/书法', pts: 8 },
+            { id: 14, type: 'study', name: '写字潦草', pts: -3 },
+            { id: 15, type: 'study', name: '磨蹭拖拉', pts: -5 }
+        ];
+
+        // 动物阶段配置
+        const animalConfig = {
+            cat: { 
+                baby: '🐱基础猫', 
+                teen: '🐈蓝猫', 
+                adult: '🐈金渐层',
+                siamese: '😽暹罗猫',
+                ragdoll: '😻布偶猫',
+                abyssinian: '🦁阿比',
+                mystery: '❓神秘皮肤'
+            },
+            dog: { baby: '🐶幼犬', teen: '🐕青年狗', adult: '🦮成年狗' },
+            rabbit: { baby: '🐇幼兔', teen: '🐰青年兔', adult: '🐰成年兔' }
+        };
+
+        const catEvoChain = [
+            { id: 'baby', name: '基础猫', emoji: '🐱', minScore: 0 },
+            { id: 'teen', name: '蓝猫', emoji: '🐈', minScore: 40 },
+            { id: 'adult', name: '金渐层', emoji: '🐈', minScore: 80 },
+            { id: 'siamese', name: '暹罗猫', emoji: '😽', minScore: 120 },
+            { id: 'ragdoll', name: '布偶猫', emoji: '😻', minScore: 160 },
+            { id: 'abyssinian', name: '阿比', emoji: '🦁', minScore: 200 },
+            { id: 'mystery', name: '神秘皮肤', emoji: '❓', minScore: 300 }
+        ];
+
+        let state = {
+            name: '',
+            score: 0,
+            pet: { type: 'cat', stage: 'baby', exp: 0 },
+            vouchers: [
+                { id: 1, name: '看动画片20分钟', cost: 30 },
+                { id: 2, name: '奖励一个新玩具', cost: 100 }
+            ],
+            tasks: [],
+            parentPassword: '', // 初始为空
+            lastCheckInDate: '', // YYYY-MM-DD
+            checkInStreak: 0,
+            lastActiveTime: Date.now(),
+            unlockedEvos: ['baby'], // 已解锁的图鉴 ID
+            lastPunchInDate: '', // 每日打卡日期
+            punchInStreak: 0, // 连续打卡天数
+            isParentMode: false
+        };
+
+        let selectedPetType = 'cat';
+
+        function init() {
+            const saved = localStorage.getItem('petpet_pro_state_demo');
+            if (saved) {
+                state = JSON.parse(saved);
+                state.isParentMode = false;
+                showMainView();
+            } else {
+                document.getElementById('onboarding').classList.remove('hidden');
+            }
+            updateUI();
+            updateStatusBubble(); // 初始化气泡
+            state.lastActiveTime = Date.now();
+            save();
+        }
+
+        function save() {
+            localStorage.setItem('petpet_pro_state_demo', JSON.stringify(state));
+        }
+
+        function dailyPunchIn() {
+            const today = new Date().toISOString().split('T')[0];
+            if (state.lastPunchInDate === today) return;
+
+            // 检查是否是连续打卡
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+            if (state.lastPunchInDate === yesterdayStr) {
+                state.punchInStreak++;
+            } else {
+                state.punchInStreak = 1;
+            }
+
+            state.score += 1;
+            state.lastPunchInDate = today;
+            
+            // 显示弹窗
+            document.getElementById('punch-in-streak-msg').innerText = `🔥已坚持打卡 ${state.punchInStreak} 天`;
+            document.getElementById('punch-in-modal').classList.remove('hidden');
+            
+            save();
+            updateUI();
+        }
+
+        function closePunchInModal() {
+            document.getElementById('punch-in-modal').classList.add('hidden');
+            showStatusBubble('打卡成功，继续加油！', 3000);
+        }
+
+        // 宠物状态气泡逻辑
+        function updateStatusBubble() {
+            const bubble = document.getElementById('pet-status-bubble');
+            const now = Date.now();
+            const lastActive = state.lastActiveTime || now;
+            const hoursPassed = (now - lastActive) / (1000 * 60 * 60);
+            
+            const today = new Date().toISOString().split('T')[0];
+            const doneToday = state.tasks.filter(t => t.status === 'completed' && t.time.includes(today)).length;
+
+            let msg = "要一起玩吗？";
+            
+            if (hoursPassed > 24) {
+                msg = "好久没见啦，想你！";
+            } else if (state.score >= 35 && state.score < 40 || state.score >= 75 && state.score < 80 || state.score >= 155 && state.score < 160) {
+                msg = "感觉快要进化了！";
+            } else if (doneToday === 0) {
+                msg = "今天还没做任务呢~";
+            } else if (state.tasks.filter(t => t.status === 'pending').length > 0) {
+                msg = "家长正在审核任务哦";
+            }
+
+            showStatusBubble(msg, 5000);
+        }
+
+        function showStatusBubble(text, duration = 3000) {
+            const bubble = document.getElementById('pet-status-bubble');
+            bubble.innerText = text;
+            bubble.classList.remove('hidden');
+            
+            if (window.bubbleTimeout) clearTimeout(window.bubbleTimeout);
+            window.bubbleTimeout = setTimeout(() => {
+                bubble.classList.add('hidden');
+            }, duration);
+        }
+
+        // Onboarding
+        function goToStep1() {
+            document.getElementById('onboarding-step-1').classList.remove('hidden');
+            document.getElementById('onboarding-step-2').classList.add('hidden');
+        }
+        function goToStep2() {
+            const name = document.getElementById('user-name-input').value.trim();
+            if (!name) return alert('请先告诉我你的名字呀~');
+            document.getElementById('welcome-back-name').innerText = `你好呀 ${name}！请选择你的初始宠物：`;
+            document.getElementById('onboarding-step-1').classList.add('hidden');
+            document.getElementById('onboarding-step-2').classList.remove('hidden');
+        }
+        function selectPetOption(type, el) {
+            selectedPetType = type;
+            document.querySelectorAll('.pet-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+        function finishOnboarding() {
+            state.name = document.getElementById('user-name-input').value.trim();
+            state.pet.type = selectedPetType;
+            document.getElementById('onboarding').classList.add('hidden');
+            save();
+            showMainView();
+            updateUI();
+        }
+        function showMainView() {
+            document.getElementById('display-name').innerText = state.name;
+        }
+
+        // Parent Auth Logic
+        function toggleParentMode() {
+            if (state.isParentMode) {
+                state.isParentMode = false;
+                updateModeUI();
+                updateUI();
+                return;
+            }
+
+            const modal = document.getElementById('parent-auth-modal');
+            const title = document.getElementById('auth-modal-title');
+            const desc = document.getElementById('auth-modal-desc');
+            const input = document.getElementById('parent-auth-input');
+            
+            input.value = '';
+            modal.classList.remove('hidden');
+
+            if (!state.parentPassword) {
+                title.innerText = "🆕 设置家长密码";
+                desc.innerText = "这是你第一次进入，请设置 4 位数字密码";
+            } else {
+                title.innerText = "🔒 家长验证";
+                desc.innerText = "请输入 4 位数字家长密码";
+            }
+        }
+
+        function confirmParentAuth() {
+            const input = document.getElementById('parent-auth-input').value;
+            if (!/^\d{4}$/.test(input)) return alert('请输入 4 位纯数字哦！');
+
+            if (!state.parentPassword) {
+                // 首次设置
+                state.parentPassword = input;
+                save();
+                alert('密码设置成功！现在进入家长模式');
+                enterParentMode();
+            } else {
+                // 验证
+                if (input === state.parentPassword) {
+                    enterParentMode();
+                } else {
+                    alert('密码错误，请重试');
+                }
+            }
+        }
+
+        function enterParentMode() {
+            state.isParentMode = true;
+            closeAuthModal();
+            updateModeUI();
+            updateUI();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('parent-auth-modal').classList.add('hidden');
+        }
+
+        function updateModeUI() {
+            const btn = document.getElementById('toggle-parent');
+            if (state.isParentMode) {
+                document.body.classList.add('parent-active');
+                btn.innerText = '退出家长模式 🚪';
+                btn.classList.add('btn-danger');
+            } else {
+                document.body.classList.remove('parent-active');
+                btn.innerText = '进入家长模式 🛠️';
+                btn.classList.remove('btn-danger');
+            }
+        }
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('total-score').innerText = state.score;
+            document.getElementById('current-exp').innerText = state.score;
+            if (document.getElementById('parent-total-score')) {
+                document.getElementById('parent-total-score').innerText = state.score;
+            }
+            
+            const avatar = document.getElementById('pet-avatar');
+            const stageText = document.getElementById('pet-stage-text');
+            const expBar = document.getElementById('exp-bar');
+            
+            const currentPet = state.pet.type;
+            let stageKey = 'baby';
+            
+            if (currentPet === 'cat') {
+                // 猫的进化链逻辑
+                for (let i = catEvoChain.length - 1; i >= 0; i--) {
+                    if (state.score >= catEvoChain[i].minScore) {
+                        stageKey = catEvoChain[i].id;
+                        // 自动解锁图鉴
+                        if (!state.unlockedEvos.includes(stageKey)) {
+                            state.unlockedEvos.push(stageKey);
+                            save();
+                            showToast(`🎊 解锁了新进化：${catEvoChain[i].name}！`);
+                        }
+                        break;
+                    }
+                }
+            } else {
+                // 狗和兔保持原逻辑
+                if (state.score >= 80) stageKey = 'adult';
+                else if (state.score >= 40) stageKey = 'teen';
+            }
+            
+            state.pet.stage = stageKey;
+            const config = animalConfig[currentPet][stageKey];
+            avatar.innerText = config.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\p{Emoji_Presentation}/gu)[0];
+            stageText.innerText = config;
+            
+            // 经验条计算 (以神秘皮肤 300 分为最大参考)
+            const maxRef = currentPet === 'cat' ? 300 : 160;
+            expBar.style.width = Math.min(100, (state.score / maxRef) * 100) + '%';
+            document.getElementById('current-exp').nextSibling.textContent = ` / ${maxRef}`;
+
+            // 更新打卡按钮状态
+            const today = new Date().toISOString().split('T')[0];
+            const punchInBtn = document.getElementById('punch-in-btn');
+            const punchInStreak = document.getElementById('punch-in-streak');
+            
+            if (state.lastPunchInDate === today) {
+                punchInBtn.innerText = '✅ 已打卡';
+                punchInBtn.disabled = true;
+                punchInBtn.style.opacity = '0.6';
+            } else {
+                punchInBtn.innerText = '📅 每日打卡';
+                punchInBtn.disabled = false;
+                punchInBtn.style.opacity = '1';
+            }
+            punchInStreak.innerText = state.punchInStreak > 0 ? `🔥已坚持${state.punchInStreak}天` : '';
+
+            renderChildTasks();
+            renderChildShop();
+            renderParentRules();
+            renderParentAudit();
+            renderParentVouchers();
+            renderHomeTaskPreview(); // 渲染首页预览
+            renderGalleryTab(); // 渲染图鉴页
+            updateDashboard(); // 更新家长数据看板
+        }
+
+        function renderHomeTaskPreview() {
+            const container = document.getElementById('home-task-preview');
+            container.innerHTML = '';
+            
+            // 只有孩子端加分项且未提交/未完成的任务
+            const pendingRules = DEFAULT_RULES.filter(r => r.pts > 0 && !state.tasks.some(t => t.ruleId === r.id && t.status === 'pending'));
+            const previewTasks = pendingRules.slice(0, 3);
+            
+            if (previewTasks.length === 0) {
+                container.innerHTML = '<div style="font-size:12px;color:#aaa;">太棒了！暂时没有新任务~</div>';
+                return;
+            }
+
+            previewTasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.innerHTML = `「☐ ${task.name} (+${task.pts}分)」`;
+                div.onclick = () => {
+                    const navTasks = document.querySelector('.nav-item:nth-child(2)');
+                    switchChildModule('tasks', navTasks);
+                };
+                container.appendChild(div);
+            });
+        }
+
+        function renderGalleryTab() {
+            const container = document.getElementById('gallery-container-tab');
+            const hint = document.getElementById('next-evo-detail-tab');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            catEvoChain.forEach(evo => {
+                const isUnlocked = state.unlockedEvos.includes(evo.id);
+                const div = document.createElement('div');
+                div.className = `gallery-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+                
+                // 只有解锁了才显示具体解锁分数，否则保持神秘或显示解锁条件
+                const scoreHint = isUnlocked ? '已解锁' : `${evo.minScore}分解锁`;
+                const displayName = (evo.id === 'mystery' && !isUnlocked) ? '???' : evo.name;
+                const displayEmoji = (evo.id === 'mystery' && !isUnlocked) ? '❓' : evo.emoji;
+                
+                div.innerHTML = `
+                    <div class="gallery-emoji">${displayEmoji}</div>
+                    <div class="gallery-name">${displayName}</div>
+                    <div style="font-size:10px; color:#999; margin-top:2px;">${scoreHint}</div>
+                `;
+                container.appendChild(div);
+            });
+
+            // 计算下一级
+            const nextEvo = catEvoChain.find(evo => state.score < evo.minScore);
+            if (nextEvo) {
+                hint.innerHTML = `距离解锁下一阶段 <span style="color:#ff6b81">[${nextEvo.name}]</span><br>还差 <span style="font-size:18px">${nextEvo.minScore - state.score}</span> 能量值`;
+            } else {
+                hint.innerHTML = `✨ 恭喜！你已集齐所有猫咪进化形态 ✨`;
+            }
+        }
+
+        function renderChildTasks() {
+            const pendingList = document.getElementById('child-tasks-pending');
+            const historyList = document.getElementById('child-tasks-history');
+            pendingList.innerHTML = '';
+            DEFAULT_RULES.filter(r => r.pts > 0).forEach(rule => {
+                const isWaiting = state.tasks.some(t => t.ruleId === rule.id && t.status === 'pending');
+                const div = document.createElement('div');
+                div.className = `item-card ${isWaiting ? 'disabled' : ''}`;
+                div.innerHTML = `
+                    <div class="item-info"><span class="item-name">${rule.name}</span><span class="item-meta">+${rule.pts} 能量</span></div>
+                    <button class="btn btn-small ${isWaiting ? '' : 'btn-primary'}" onclick="${isWaiting ? '' : `submitTask(${rule.id}, '${rule.name}', ${rule.pts})`}">${isWaiting ? '待审核' : '提交'}</button>
+                `;
+                pendingList.appendChild(div);
+            });
+
+            historyList.innerHTML = '';
+            state.tasks.filter(t => t.status === 'completed').reverse().forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `<div class="item-info"><span class="item-name">✅ ${t.name}</span><span class="item-meta">${t.time} · +${t.pts}</span></div>`;
+                historyList.appendChild(div);
+            });
+        }
+
+        function submitTask(ruleId, name, pts) {
+            state.tasks.push({ id: Date.now(), ruleId, name, pts, status: 'pending', time: new Date().toLocaleTimeString() });
+            save(); updateUI(); showToast('已提交审核~');
+        }
+
+        function renderChildShop() {
+            const shop = document.getElementById('child-shop'); shop.innerHTML = '';
+            state.vouchers.forEach(v => {
+                const diff = v.cost - state.score;
+                const canAfford = diff <= 0;
+                const div = document.createElement('div');
+                div.className = 'voucher-card pixel-border';
+                div.innerHTML = `<strong>${v.name}</strong><div style="color:#f39c12">💰 ${v.cost}</div><div class="voucher-hint">${canAfford ? '可兑换' : `还差 ${diff} 分`}</div><button class="btn btn-small ${canAfford ? 'btn-warning' : ''}" onclick="redeemVoucher(${v.id}, ${v.cost}, '${v.name}')">${canAfford ? '兑换' : '不足'}</button>`;
+                shop.appendChild(div);
+            });
+        }
+
+        function redeemVoucher(id, cost, name) {
+            if (state.score < cost) return showToast('积分不够哦~');
+            if (confirm(`兑换 [${name}]？`)) { state.score -= cost; save(); updateUI(); alert('兑换成功！'); }
+        }
+
+        function renderParentRules(f = '') {
+            const list = document.getElementById('rules-list'); list.innerHTML = '';
+            (f ? DEFAULT_RULES.filter(r => r.type === f) : DEFAULT_RULES).forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `<div class="item-info"><span class="item-name">${r.name}</span><span class="item-meta">${r.pts > 0 ? '+' : ''}${r.pts}</span></div><button class="btn btn-small ${r.pts > 0 ? 'btn-success' : 'btn-danger'}" onclick="parentAdjustScore(${r.pts}, '${r.name}')">${r.pts > 0 ? '打分' : '扣分'}</button>`;
+                list.appendChild(div);
+            });
+        }
+
+        function parentAdjustScore(p, n) { state.score = Math.max(0, state.score + p); save(); updateUI(); showToast(`已打分: ${n}`); }
+
+        function renderParentAudit() {
+            const list = document.getElementById('parent-audit'); list.innerHTML = '';
+            const pending = state.tasks.filter(t => t.status === 'pending');
+            if (!pending.length) list.innerHTML = '<div style="text-align:center;padding:20px;">暂无审核</div>';
+            pending.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `<div class="item-info"><span class="item-name">${t.name}</span><span class="item-meta">+${t.pts}</span></div><div style="display:flex;gap:5px"><button class="btn btn-small btn-success" onclick="auditTask(${t.id}, true)">√</button><button class="btn btn-small btn-danger" onclick="auditTask(${t.id}, false)">×</button></div>`;
+                list.appendChild(div);
+            });
+        }
+
+        function auditTask(id, ok) {
+            const idx = state.tasks.findIndex(t => t.id === id);
+            if (ok) { 
+                state.score += state.tasks[idx].pts; 
+                state.tasks[idx].status = 'completed'; 
+                state.tasks[idx].completedAt = new Date().toISOString(); // 使用 ISO 格式方便解析
+                state.tasks[idx].time = new Date().toLocaleString(); 
+            }
+            else { state.tasks.splice(idx, 1); }
+            save(); updateUI();
+        }
+
+        function updateDashboard() {
+            if (!state.isParentMode) return;
+
+            const completedTasks = state.tasks.filter(t => t.status === 'completed');
+            
+            // 1. 累计家务时长
+            let houseworkMinutes = 0;
+            completedTasks.forEach(t => {
+                const rule = DEFAULT_RULES.find(r => r.id === t.ruleId);
+                if (rule && rule.type === 'housework') houseworkMinutes += 15;
+            });
+            const houseworkHours = (houseworkMinutes / 60).toFixed(1);
+            document.getElementById('stat-housework').innerHTML = `<em>${houseworkHours}</em> 小时`;
+
+            // 2. 累计学习时长
+            let studyMinutes = 0;
+            completedTasks.forEach(t => {
+                const rule = DEFAULT_RULES.find(r => r.id === t.ruleId);
+                if (rule && rule.type === 'study') studyMinutes += 30;
+            });
+            const studyHours = (studyMinutes / 60).toFixed(1);
+            document.getElementById('stat-study').innerHTML = `<em>${studyHours}</em> 小时`;
+
+            // 3. 连续打卡天数
+            document.getElementById('stat-streak').innerHTML = `<em>${state.punchInStreak}</em> 天`;
+
+            // 4. 本周完成任务总数 (从周一算起)
+            const now = new Date();
+            const day = now.getDay() || 7; // 周日为 7
+            const monday = new Date(now);
+            monday.setHours(0,0,0,0);
+            monday.setDate(now.getDate() - (day - 1));
+
+            const weekTasks = completedTasks.filter(t => {
+                const date = t.completedAt ? new Date(t.completedAt) : new Date(t.time);
+                return date >= monday;
+            });
+            document.getElementById('stat-week-tasks').innerHTML = `<em>${weekTasks.length}</em> 个`;
+
+            // 5. 过去7天积分变化 (近似统计已完成任务积分 + 打卡积分)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(now.getDate() - 7);
+            sevenDaysAgo.setHours(0,0,0,0);
+
+            let weekScoreChange = 0;
+            weekTasks.forEach(t => weekScoreChange += t.pts);
+            
+            // 如果最后打卡日期在7天内，估算打卡积分 (简化处理：本周内每天+1)
+            // 实际上由于没有完整打卡历史，这里主要统计任务积分
+            document.getElementById('stat-week-score').innerHTML = `📈 本周 <em>+${weekScoreChange}</em> 分`;
+            
+            if (completedTasks.length === 0 && state.punchInStreak === 0) {
+                // 如果完全没数据
+                ['stat-housework', 'stat-study', 'stat-week-tasks'].forEach(id => {
+                    document.getElementById(id).innerText = '暂无数据';
+                });
+            }
+        }
+
+        function renderParentVouchers() {
+            const list = document.getElementById('parent-voucher-list'); list.innerHTML = '';
+            state.vouchers.forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.innerHTML = `<div class="item-info"><span class="item-name">${v.name}</span><span class="item-meta">${v.cost} 分</span></div><button class="btn btn-small btn-danger" onclick="deleteVoucher(${v.id})">删</button>`;
+                list.appendChild(div);
+            });
+        }
+
+        function addNewVoucher() {
+            const n = document.getElementById('v-name-input').value.trim();
+            const c = parseInt(document.getElementById('v-cost-input').value);
+            if (n && c) { state.vouchers.push({ id: Date.now(), name: n, cost: c }); save(); updateUI(); }
+        }
+
+        function deleteVoucher(id) { state.vouchers = state.vouchers.filter(v => v.id !== id); save(); updateUI(); }
+
+        function updateParentPassword() {
+            const p = document.getElementById('new-password-input').value;
+            if (/^\d{4}$/.test(p)) { state.parentPassword = p; save(); alert('修改成功！'); }
+        }
+
+        function resetSystem() { if (confirm('重置所有数据？')) { localStorage.removeItem('petpet_pro_state_demo'); location.reload(); } }
+
+        function switchChildModule(module, el) {
+            // 更新导航栏样式
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+
+            // 切换视图
+            document.getElementById('child-pet-view').classList.add('hidden');
+            document.getElementById('child-tasks-view').classList.add('hidden');
+            document.getElementById('child-shop-view').classList.add('hidden');
+            document.getElementById('child-gallery-view').classList.add('hidden');
+            
+            document.getElementById(`child-${module}-view`).classList.remove('hidden');
+            
+            if (module === 'gallery') {
+                renderGalleryTab();
+            }
+        }
+
+        function switchChildTab(t) {
+            document.querySelectorAll('#child-view .tab').forEach(x => x.classList.remove('active'));
+            document.getElementById('child-tasks-pending').classList.add('hidden');
+            document.getElementById('child-tasks-history').classList.add('hidden');
+            event.target.classList.add('active');
+            document.getElementById(`child-tasks-${t}`).classList.remove('hidden');
+        }
+
+        function switchParentTab(t) {
+            document.querySelectorAll('#parent-view .tab').forEach(x => x.classList.remove('active'));
+            ['rules', 'audit', 'vouchers', 'settings'].forEach(k => document.getElementById(`parent-${k}`).classList.add('hidden'));
+            event.target.classList.add('active');
+            document.getElementById(`parent-${t}`).classList.remove('hidden');
+        }
+
+        function filterRules(t) { renderParentRules(t); }
+
+        function petInteraction() {
+            const av = document.getElementById('pet-avatar'); av.classList.add('pet-bounce');
+            setTimeout(() => av.classList.remove('pet-bounce'), 500);
+
+            const msgs = ["嘻嘻，好痒呀~", "别摸啦，在长个子呢！", "你是最棒的小主人！", "今天也要加油哦！", "摸摸头，万事不愁~", "贴贴~", "哎呀！被你发现啦"];
+            const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+            showStatusBubble(randomMsg, 2000);
+            showFloatingText(randomMsg, '#4a4a4a');
+        }
+
+        function showToast(m) { showFloatingText(m, '#ff6b81', true); }
+
+        function showFloatingText(t, c, ctr) {
+            const d = document.createElement('div'); d.className = 'floating-text'; d.innerText = t; d.style.color = c;
+            if (ctr) { d.style.left = '50%'; d.style.top = '40%'; d.style.transform = 'translateX(-50%)'; }
+            else { const a = document.getElementById('pet-avatar'); d.style.left = (a.offsetLeft + 20) + 'px'; d.style.top = (a.offsetTop) + 'px'; }
+            document.body.appendChild(d); setTimeout(() => d.remove(), 1000);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
